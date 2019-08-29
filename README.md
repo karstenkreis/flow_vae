@@ -45,7 +45,8 @@ acceptance rate. Unfortunately, I found HAIS-based log-likelihood estimation to 
 models due the large number of annealing steps required to obtain accurate results.
 
 Note that the code also prints a logfile and provides some basic tensorboard training curves. After training, it saves 
-the model, draws new images from the model, and compares inputs with reconstructions.
+the model, draws new images from the model, and compares inputs with reconstructions. Furthermore, note that the code 
+makes use of tensorflow_datasets and downloads the MNIST dataset for you.
 
 ## Results
 

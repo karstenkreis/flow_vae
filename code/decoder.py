@@ -5,10 +5,6 @@ from __future__ import print_function
 import tensorflow as tf
 from code.logger import log
 
-NONCONV_DECODER = "NONCONV_DECODER"
-IAF_DECODER = "IAF_DECODER"
-SNF_DECODER = "SNF_DECODER"
-
 
 def decoder_factory(decoder_type, **kwargs):
     if decoder_type == "NONCONV_DECODER":

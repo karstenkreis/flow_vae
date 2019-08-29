@@ -5,10 +5,6 @@ from __future__ import print_function
 import tensorflow as tf
 from code.logger import log
 
-NONCONV_ENCODER = "NONCONV_ENCODER"
-IAF_ENCODER = "IAF_ENCODER"
-SNF_ENCODER = "SNF_ENCODER"
-
 
 def encoder_factory(encoder_type, **kwargs):
 

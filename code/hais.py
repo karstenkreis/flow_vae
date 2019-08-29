@@ -14,37 +14,6 @@ class HamiltonianAnnealedImportanceSampling(object):
     def __init__(self, model, num_ais_chains=16, leapfrog_steps=10, leapfrog_stepsize=0.01, anneal_steps=500,
                  use_encoder=False, target_acceptance_rate=0.65, avg_acceptance_slowness=0.9, stepsize_min=0.0001,
                  stepsize_max=0.5, stepsize_dec=0.98, stepsize_inc=1.02):
-        """
-        Annealed Importance Sampling constructor.
-        Parameters:
-            "model": the model, which is being evaluated.
-            "num_ais_chains": number of parallel Markov chains running for each data element
-            "leapfrog_steps": number of leapfrog steps for HMC trajectories
-            "leapfrog_stepsize": initial stepsize for Hamiltonian dynamics steps. Will be modified throughout the
-            annealing to reach the target acceptance rate in the Metropolis accept/reject steps of the HMC algorithm.
-            "anneal_steps": annealing steps in interpolation path between initial and target distribution
-            "use_encoder": If true, we use the approx. posterior distribution q(z|x) as starting point for annealing
-            path, otherwise we use the prior distribution p(z). In a VAE context, when there is an approx. posterior
-            available, it makes typically sense to use it, because it is usually still a better fit to the true
-            posterior than the simple prior)
-            "target_acceptance_rate": target acceptance rate in the Metropolis accept/reject steps of the HMC algorithm
-            "avg_acceptance_slowness": speed of leapfrog stepsize adaptation. 1.0 is no adaptation at all. 0.0 is
-            immediate  adaption, which could lead to undesirably strong fluctuations in stepsize.
-            "stepsize_min": minimum leapfrog stepsize
-            "stepsize_max": maximum leapfrog stepsize
-            "stepsize_dec": leapfrog stepsize multiplier for stepsize decrease
-            "stepsize_inc": leapfrog stepsize multiplier for stepsize increase
-        The default values correspond to the default values in https://github.com/tonywu95/eval_gen (the original
-        implementation used for their paper) and https://github.com/jiamings/ais (a tensorflow version). They should
-        lead to relatively robust results and reproduce the main results of the paper. Also note that 0.65 target
-        acceptance rate was recommended by Neal in "MCMC using Hamiltonian dynamics", 2010.
-
-        Note that there is one issue: The tensorflow computation graph builds the decoder network six times for the
-        six different calls with different z inputs (1x for lld computation, 3x for HMC gradients, 2x HMC Metropolis
-        accept/reject calls). This is not optimal and could lead to memory issues for large networks and data sets. The
-        point is that we run the network within a single graph run several times using different inputs. Tensorflow will
-        add new ops for each network call.
-        """
         log("\nBuilding Hamiltonian Annealed Importance Sampling for log-likelihood estimation.")
         self.sampler = HamiltonianMonteCarlo()
 
@@ -87,7 +56,7 @@ class HamiltonianAnnealedImportanceSampling(object):
     def _energy_function(self, z):
         """The energy as a function of latent configuration z along the annealing path. It is just the interpolation
         between the negative log-probability of the starting distribution (prior or approx. posterior) and the negative
-         log-probability of the target distribution, this is, the posterior distrbution."""
+        log-probability of the target distribution, this is, the posterior distrbution."""
         return -((1.0 - self.t)*self.start_distribution_log_pdf_function(z) + self.t*(self.prior_log_pdf_function(z) +
                                                                                     self.generator_log_pdf_function(z)))
 
@@ -108,8 +77,6 @@ class HamiltonianAnnealedImportanceSampling(object):
             prev_u = self._log_likelihood(t0, sess, feed_dict)
             weights += new_u - prev_u
             new_z, accept = self._step(t1, sess, feed_dict)
-            # for debugging and checking whether the stepsize adaptation manages to reach the target accept/reject ratio
-            # print(np.mean(accept), sess.run(self.stepsize))
         return weights
 
     def _step(self, t, sess, feed_dict):
