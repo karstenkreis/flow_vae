@@ -7,7 +7,6 @@ from code.logger import log
 
 
 def encoder_factory(encoder_type, **kwargs):
-
     if encoder_type == "NONCONV_ENCODER":
         return NonconvEncoder(**kwargs)
     elif encoder_type == "IAF_ENCODER":

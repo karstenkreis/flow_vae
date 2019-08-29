@@ -15,7 +15,6 @@ import time
 
 
 class Manager(object):
-
     def __init__(self, name, num_epochs, model_params, data_params, restart_filename=None):
         self._name = name
         self._restart_filename = restart_filename

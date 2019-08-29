@@ -8,7 +8,6 @@ from code.logger import log
 
 
 def flow_factory(flow_type, **kwargs):
-
     if flow_type == "IDENTITY_FLOW":
         return IdentityFlow(**kwargs)
     elif flow_type == "IAF":

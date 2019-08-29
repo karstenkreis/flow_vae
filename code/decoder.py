@@ -19,7 +19,6 @@ def decoder_factory(decoder_type, **kwargs):
 
 class DecoderBaseClass(object):
     """Baseclass for all encoders."""
-
     def __init__(self, output_size, **kwargs):
         self._output_size = output_size
 
@@ -34,7 +33,6 @@ class DecoderBaseClass(object):
 
 class NonconvDecoder(DecoderBaseClass):
     """A very simple encoder consisting of several fully connected layers."""
-
     def __init__(self, nn_hidden_layers, **kwargs):
         super(NonconvDecoder, self).__init__(**kwargs)
         self._nn_hidden_layers = nn_hidden_layers

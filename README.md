@@ -33,11 +33,11 @@ self-explanatory. One important difference compared to the reference paper is th
 instead of weight normalization and does not use data-dependent initialization. For MNIST, this worked just fine, but I 
 could image that when modeling more complex data, such as CIFAR10, it will make a difference and weightnorm with 
 data-dependent init will work better. I also found that, unsurprisingly, without any normalization in the cMADE layers 
-training can become unstable easily.
+training can be unstable easily.
 
 I also implemented different techniques to estimate the log-likelihood of the final model. It can be estimated 
 with standard importance sampling in latent space, using the approximate posterior distribution as the proposal 
-distribution. Additionally, I implemented a Hamiltonian Annealed Importance Sampling (HAIS, see, e.g., 
+distribution. Additionally, I implemented Hamiltonian Annealed Importance Sampling (HAIS, see, e.g., 
 arxiv.org/abs/1611.04273). As start distribution for the annealing path one can use either the prior or the base 
 distribution of the approximate posterior and all details of the HAIS algorithm can be specified by the user. The 
 Leapfrog stepsize of the HMC algorithm is adapted dynamically such that HMC proposals are accepted with the target 
@@ -52,8 +52,8 @@ makes use of tensorflow_datasets and downloads the MNIST dataset for you.
 
 I did some basic tests of the code and the best performing model was a VAE with a ResNet encoder and decoder and an 
 inverse autoregressive flow with 8 flow layers in the approximate posterior (see default setup in run_script.py). The 
-marginal log-likelihood log p(x) was estimates with 1000 importance samples using the approximate posterior as proposal 
-distribution.
+marginal log-likelihood log p(x) was estimated via importance sampling with 1000 samples using the approximate 
+posterior as proposal distribution.
 
 Train set neg. ELBO: 78.85 <br />
 Test set neg. ELBO: 80.53 <br />

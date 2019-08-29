@@ -9,8 +9,7 @@ from code.logger import log
 
 class HamiltonianAnnealedImportanceSampling(object):
     """Annealed Importance Sampling (arxiv.org/abs/1611.04273). The sampler used to sample the probability 
-    distributions along the annealing path is Hamiltonian Monte Carlo (HMC).
-    """
+    distributions along the annealing path is Hamiltonian Monte Carlo (HMC)."""
     def __init__(self, model, num_ais_chains=16, leapfrog_steps=10, leapfrog_stepsize=0.01, anneal_steps=500,
                  use_encoder=False, target_acceptance_rate=0.65, avg_acceptance_slowness=0.9, stepsize_min=0.0001,
                  stepsize_max=0.5, stepsize_dec=0.98, stepsize_inc=1.02):
@@ -67,18 +66,6 @@ class HamiltonianAnnealedImportanceSampling(object):
         feed_dict[self.z] = self.zv
         return sess.run(self.lld, feed_dict=feed_dict)
 
-    def run(self, sess, feed_dict):
-        """Runs annealed importance sampling for given input (feed_dict) and session. Returns the importance weights."""
-        weights = np.zeros([self.num_ais_chains, self.batchsize], dtype=np.float128)
-        schedule = self._get_schedule(num=self.anneal_steps)
-        self.zv = sess.run(self.start_distribution_sample, feed_dict=feed_dict)
-        for (t0, t1) in zip(schedule[:-1], schedule[1:]):
-            new_u = self._log_likelihood(t1, sess, feed_dict)
-            prev_u = self._log_likelihood(t0, sess, feed_dict)
-            weights += new_u - prev_u
-            new_z, accept = self._step(t1, sess, feed_dict)
-        return weights
-
     def _step(self, t, sess, feed_dict):
         """Runs a single step of annealed importance sampling for interpolation parameter t as well as current session
         and feed dictionary. Return new latent space configuration, acceptance matrix, and velocities in latent
@@ -100,6 +87,18 @@ class HamiltonianAnnealedImportanceSampling(object):
         t = np.linspace(-rad, rad, num)
         s = 1.0 / (1.0 + np.exp(-t))
         return (s - np.min(s)) / (np.max(s) - np.min(s))
+
+    def run(self, sess, feed_dict):
+        """Runs annealed importance sampling for given input (feed_dict) and session. Returns the importance weights."""
+        weights = np.zeros([self.num_ais_chains, self.batchsize], dtype=np.float128)
+        schedule = self._get_schedule(num=self.anneal_steps)
+        self.zv = sess.run(self.start_distribution_sample, feed_dict=feed_dict)
+        for (t0, t1) in zip(schedule[:-1], schedule[1:]):
+            new_u = self._log_likelihood(t1, sess, feed_dict)
+            prev_u = self._log_likelihood(t0, sess, feed_dict)
+            weights += new_u - prev_u
+            new_z, accept = self._step(t1, sess, feed_dict)
+        return weights
 
 
 class HamiltonianMonteCarlo(object):

@@ -71,12 +71,12 @@ class Model(object):
         self._epoch_recloss_node = tf.placeholder(dtype=tf.float32, shape=(), name="epoch_recloss_node")
         self._epoch_kldloss_node = tf.placeholder(dtype=tf.float32, shape=(), name="epoch_kldloss_node")
 
-        with tf.variable_scope("global_loss_scope", reuse=tf.AUTO_REUSE):
-            self._epoch_elbo_var = tf.get_variable(name='epoch_nll_var', shape=[], trainable=False,
+        with tf.variable_scope("global_loss_scope"):
+            self._epoch_elbo_var = tf.get_variable(name='epoch_nll_var_' + self._modeltype, shape=[], trainable=False,
                                                          dtype=tf.float32, initializer=tf.zeros_initializer)
-            self._epoch_recloss_var = tf.get_variable(name='epoch_mse_var', shape=[], trainable=False,
+            self._epoch_recloss_var = tf.get_variable(name='epoch_mse_var_' + self._modeltype, shape=[], trainable=False,
                                                             dtype=tf.float32, initializer=tf.zeros_initializer)
-            self._epoch_kldloss_var = tf.get_variable(name='epoch_kld_var', shape=[], trainable=False,
+            self._epoch_kldloss_var = tf.get_variable(name='epoch_kld_var_' + self._modeltype, shape=[], trainable=False,
                                                             dtype=tf.float32, initializer=tf.zeros_initializer)
 
         self._assign_op_elbo = tf.assign(self._epoch_elbo_var, self._epoch_elbo_node)
@@ -204,10 +204,10 @@ class Model(object):
     def _run_elbo(self, sess):
         return sess.run([self._rec_loss, self._kld_loss], feed_dict={self._training_mode: False})
 
-    def _update_variables_for_tensorboard(self, sess, epoch_rec_loss_train, epoch_kld_loss_train, epoch_elbo_train):
-        sess.run(self._assign_op_elbo, feed_dict={self._epoch_elbo_node: epoch_elbo_train})
-        sess.run(self._assign_op_recloss, feed_dict={self._epoch_recloss_node: epoch_rec_loss_train})
-        sess.run(self._assign_op_kldloss, feed_dict={self._epoch_kldloss_node: epoch_kld_loss_train})
+    def _update_variables_for_tensorboard(self, sess, epoch_rec_loss, epoch_kld_loss, epoch_elbo):
+        sess.run(self._assign_op_elbo, feed_dict={self._epoch_elbo_node: epoch_elbo})
+        sess.run(self._assign_op_recloss, feed_dict={self._epoch_recloss_node: epoch_rec_loss})
+        sess.run(self._assign_op_kldloss, feed_dict={self._epoch_kldloss_node: epoch_kld_loss})
 
     ### Functions for interaction with external code that is not part of this class ###
 
@@ -249,11 +249,11 @@ class Model(object):
             kld_loss += this_kld_loss
             elbo += this_rec_loss + this_kld_loss
 
-        epoch_rec_loss_train = rec_loss / steps
-        epoch_kld_loss_train = kld_loss / steps
-        epoch_elbo_train = elbo / steps
+        epoch_rec_loss = rec_loss / steps
+        epoch_kld_loss = kld_loss / steps
+        epoch_elbo = elbo / steps
 
-        self._update_variables_for_tensorboard(sess, epoch_rec_loss_train, epoch_kld_loss_train, epoch_elbo_train)
+        self._update_variables_for_tensorboard(sess, epoch_rec_loss, epoch_kld_loss, epoch_elbo)
         return elbo / steps
 
     def calc_nll(self, sess):
