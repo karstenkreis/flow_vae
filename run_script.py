@@ -19,7 +19,7 @@ SNF_DECODER = "SNF_DECODER"
 
 def build_parameter_dict():
     parameter_dictionary = {
-        "name": "vae_iaf_flow",
+        "name": "vae_iaf",
         "restart_filename": None,
         "num_epochs": 2500,
         "model_params": {

@@ -59,16 +59,12 @@ class IAF(FlowBaseClass):
                  **kwargs):
         super(IAF, self).__init__(**kwargs)
 
-        # cMADE params (cMADE = contextMADE)
         self._cmade_context_SNF_like = cmade_context_SNF_like
         self._cmade_hidden_layers = cmade_hidden_layers
         self._flow_shift_only = flow_shift_only
         self._cmade_batchnorm = cmade_batchnorm  # bool, if True, rather use batchnorm in the cMADE
         self._cmade_masks_even, self._cmade_masks_odd = self._construct_masks(num_latent_units, self._cmade_hidden_layers)
 
-        # These are the normal IAF transformer functions used by Kingma et al. This needs to be changed when using
-        # neural autoregressive flows. The number of outputs would need to correspond to the number of parameters that
-        # parametrize the DNN instead of the simple transformation used in normal IAFs
         if self._flow_shift_only:
             self._transformer_function = self._iaf_transformer_function_shiftonly
         else:
@@ -77,14 +73,8 @@ class IAF(FlowBaseClass):
     @staticmethod
     def _iaf_transformer_function_shift_and_scale(m_t, s_t, approx_post_samples):
         sigma_t = tf.sigmoid(s_t)
-
-        # Propagate samples
         transformed = sigma_t * approx_post_samples + (1.0 - sigma_t) * m_t
-
-        # Log det J (note that this is not yet summed over the latent variables and does not directly correspond to
-        # the log_det_J term in the paper)
         log_det_J = tf.log(sigma_t)
-
         return transformed, log_det_J
 
     @staticmethod
@@ -96,7 +86,6 @@ class IAF(FlowBaseClass):
         log("Building inverse autoregressive flow layer", str(flow_step), "and reversed dependencies are",
             reverse_dependencies)
 
-        # Autoregressive NN:
         with tf.variable_scope("cMADE_layer_" + str(flow_step)):
             m_t, s_t = self._run_cMADE(input, context=context,
                                        masks=self._cmade_masks_odd if reverse_dependencies else self._cmade_masks_even,
@@ -106,7 +95,6 @@ class IAF(FlowBaseClass):
         if s_t is not None:
             assert s_t.get_shape() == input.get_shape()
 
-        # Transformer:
         transformed, log_det_j = self._transformer_function(m_t, s_t, input)
 
         return transformed, log_det_j
@@ -190,12 +178,10 @@ class IAF(FlowBaseClass):
         return output
 
     def _run_cMADE(self, approx_post_samples, context, masks, is_training):
-        # regular inputs to first hidden layer
         first_hidden_masked = self._linear_layer_cMADE(approx_post_samples, self._cmade_hidden_layers[0],
                                                        name="cMADE_layer_0", mask=masks[0],
                                                        bias=False if self._cmade_batchnorm else True)
 
-        # Is context fed into MADE like in SNF paper?
         if self._cmade_context_SNF_like:
             if self._cmade_batchnorm:
                 with tf.variable_scope("cMADE_BN_0", reuse=None):
@@ -204,25 +190,20 @@ class IAF(FlowBaseClass):
 
             first_hidden_masked_act = tf.nn.elu(first_hidden_masked)
 
-            # combine
             if context is not None:
                 hidden = context + first_hidden_masked_act
             else:
                 hidden = first_hidden_masked_act
 
-        # Or is context fed into MADE like in IAF paper?
         else:
-            # context to first hidden layer
             if context is not None:
                 first_hidden_context = self._linear_layer_cMADE(context, self._cmade_hidden_layers[0],
                                                             name="cMADE_layer_0_context", mask=None, bias=False)
 
-                # combine
                 first_hidden_combined = first_hidden_context + first_hidden_masked
             else:
                 first_hidden_combined = first_hidden_masked
 
-            # batchnorm?
             if self._cmade_batchnorm:
                 with tf.variable_scope("cMADE_BN_0", reuse=None):
                     first_hidden_combined = tf.contrib.layers.batch_norm(first_hidden_combined, center=True, scale=True,
@@ -235,7 +216,6 @@ class IAF(FlowBaseClass):
                                               name="cMADE_layer_"+str(layer), mask=masks[layer],
                                               bias=False if self._cmade_batchnorm else True)
 
-            # batchnorm?
             if self._cmade_batchnorm:
                 with tf.variable_scope("cMADE_BN_"+str(layer), reuse=None):
                     hidden = tf.contrib.layers.batch_norm(hidden, center=True, scale=True, is_training=is_training,

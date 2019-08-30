@@ -53,14 +53,12 @@ class Manager(object):
     ### Internal class functions ###
 
     def _build_model(self, dataset):
-        with tf.variable_scope("model_scope", reuse=None):
-            self._model_train = Model(modeltype="train", dataset=dataset, **self._model_params)
+        self._model_train = Model(modeltype="train", dataset=dataset, **self._model_params)
 
-        with tf.variable_scope("model_scope", reuse=True):
-            if dataset.using_validation_set():
-                self._model_val = Model(modeltype="val", dataset=dataset, **self._model_params)
-            if dataset.using_test_set():
-                self._model_test = Model(modeltype="test", dataset=dataset, **self._model_params)
+        if dataset.using_validation_set():
+            self._model_val = Model(modeltype="val", dataset=dataset, **self._model_params)
+        if dataset.using_test_set():
+            self._model_test = Model(modeltype="test", dataset=dataset, **self._model_params)
 
         self._analysis = Analysis(self._name, dataset, self._model_train, self._model_val, self._model_test)
 
@@ -68,33 +66,27 @@ class Manager(object):
 
     def _init_saver_and_variables(self):
         assert self._sess is not None
-        # init variables
         tf.global_variables_initializer().run(session=self._sess)
 
-        # set up saver (trainable variables and batchnorm running averages)
         variables_to_save = tf.get_collection(tf.GraphKeys.VARIABLES, scope="model_scope/var_scope/")
         log("\nVariables to be saved:")
         for v in variables_to_save:
             log(v.name)
         self._saver = tf.train.Saver(variables_to_save, max_to_keep=1)
 
-        # reload parameter state if necessary
         if self._restart_filename is not None:
             restore_file_name = self._tensorboard_dir + self._restart_filename + "/PARAMETERSTATE.ckpt"
             log("\nTrying restore file: " + restore_file_name)
             try:
                 self._saver.restore(self._sess, restore_file_name)
-                self._name += '_restart'
                 log("Successfully restored variables from checkpoint!")
-            except ValueError as exception:
+            except Exception as exception:
                 log("\n!! WARNING: !!")
-                log("Tried to restore variables from checkpoint, but failed as ValueError:", exception.message)
+                log("Tried to restore variables from checkpoint, but failed with Exception:", exception.message)
                 log("Will start from freshly initialized variables.")
 
-        # Instantiate a SummaryWriter to output summaries and the graph
         self._summary_writer = tf.summary.FileWriter(self._tensorboard_dir + self._name, graph=self._sess.graph)
 
-        # Finalize graph
         self._sess.graph.finalize()
         log("\nComputation graph finalized.")
 

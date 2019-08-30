@@ -29,24 +29,26 @@ class Model(object):
         # batch data
         self._image, self._label, self._image_greyscale = self._get_batch()
 
-        # build variables, encoder, flow, decoder, losses, samplers, train ops, etc.
+        # build auxiliary variables, encoder, flow, decoder, losses, samplers, train ops, etc.
         self._build_variables()
-        self._encoder = self._build_encoder(encoder_params)
-        self._flow = self._build_flow(flow_params) if flow_params is not None else None
-        self._decoder = self._build_decoder(decoder_params)
-        with tf.variable_scope("var_scope", reuse=None if modeltype == "train" else True):
-            self._rec_loss, self._kld_loss, self._decoding = self._build_losses(is_mode=False)
+        with tf.variable_scope("model_scope", reuse=None if self._modeltype == "train" else True):
+            self._encoder = self._build_encoder(encoder_params)
+            self._flow = self._build_flow(flow_params) if flow_params is not None else None
+            self._decoder = self._build_decoder(decoder_params)
+            with tf.variable_scope("var_scope", reuse=None if self._modeltype == "train" else True):
+                self._rec_loss, self._kld_loss, self._decoding = self._build_losses(is_mode=False)
 
-        if modeltype != "train":
-            self.generator_log_pdf = self._build_generator_log_pdf_function()
-            self._hais = self._build_hais(hais_params) if hais_params is not None else None
-            with tf.variable_scope("var_scope", reuse=True):
-                rec_loss_samples, kld_loss_samples, _ = self._build_losses(is_mode=True)
-            self._is_sample_op = rec_loss_samples + kld_loss_samples
+        with tf.variable_scope("model_scope", reuse=tf.AUTO_REUSE):
+            if modeltype != "train":
+                self.generator_log_pdf = self._build_generator_log_pdf_function()
+                self._hais = self._build_hais(hais_params) if hais_params is not None else None
+                with tf.variable_scope("var_scope", reuse=True):
+                    rec_loss_samples, kld_loss_samples, _ = self._build_losses(is_mode=True)
+                self._is_sample_op = rec_loss_samples + kld_loss_samples
 
-        if modeltype == "train":
-            self._run_step_op = self._build_run_ops(opt_params)
-            self._image_sampler = self._build_image_sampler()
+            if modeltype == "train":
+                self._run_step_op = self._build_run_ops(opt_params)
+                self._image_sampler = self._build_image_sampler()
 
     ### Internal class functions ###
 
@@ -73,19 +75,20 @@ class Model(object):
 
         with tf.variable_scope("global_loss_scope"):
             self._epoch_elbo_var = tf.get_variable(name='epoch_nll_var_' + self._modeltype, shape=[], trainable=False,
-                                                         dtype=tf.float32, initializer=tf.zeros_initializer)
+                                                   dtype=tf.float32, initializer=tf.zeros_initializer)
             self._epoch_recloss_var = tf.get_variable(name='epoch_mse_var_' + self._modeltype, shape=[], trainable=False,
-                                                            dtype=tf.float32, initializer=tf.zeros_initializer)
+                                                      dtype=tf.float32, initializer=tf.zeros_initializer)
             self._epoch_kldloss_var = tf.get_variable(name='epoch_kld_var_' + self._modeltype, shape=[], trainable=False,
-                                                            dtype=tf.float32, initializer=tf.zeros_initializer)
+                                                      dtype=tf.float32, initializer=tf.zeros_initializer)
 
         self._assign_op_elbo = tf.assign(self._epoch_elbo_var, self._epoch_elbo_node)
         self._assign_op_recloss = tf.assign(self._epoch_recloss_var, self._epoch_recloss_node)
         self._assign_op_kldloss = tf.assign(self._epoch_kldloss_var, self._epoch_kldloss_node)
 
-        tf.summary.scalar("ELBO " + self._modeltype, self._epoch_elbo_var)
-        tf.summary.scalar("RECLOSS " + self._modeltype, self._epoch_recloss_var)
-        tf.summary.scalar("KLDLOSS " + self._modeltype, self._epoch_kldloss_var)
+        with tf.variable_scope("model_scope"):
+            tf.summary.scalar("ELBO " + self._modeltype, self._epoch_elbo_var)
+            tf.summary.scalar("RECLOSS " + self._modeltype, self._epoch_recloss_var)
+            tf.summary.scalar("KLDLOSS " + self._modeltype, self._epoch_kldloss_var)
 
     def _build_encoder(self, encoder_params):
         return encoder.encoder_factory(num_latent_units=self._num_latent_units, **encoder_params)
@@ -98,9 +101,9 @@ class Model(object):
 
     def _build_image_sampler(self):
         log("\nBuilding new image sampler")
-        draw_latent_state = tf.random_normal(shape=[1, self._num_latent_units])
         with tf.variable_scope("var_scope", reuse=True):
-            return self._decoder.run(draw_latent_state, is_training=False)
+            draw_latent_state = tf.random_normal(shape=[1, self._num_latent_units])
+        return self._decoder.run(draw_latent_state, is_training=False)
 
     def _build_losses(self, is_mode):
         if is_mode:
