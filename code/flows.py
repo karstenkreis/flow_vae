@@ -105,7 +105,8 @@ class IAF(FlowBaseClass):
             n_in = units[layer]
             n_out = units[layer+1]
             if (n_in > n_out and n_in % n_out != 0) or (n_out > n_in and n_out % n_in != 0):
-                raise ValueError("number of units in cMADE layer don't evenly divide")
+                raise ValueError("Number of units in cMADE layers don't evenly divide each other. Cannot construct "
+                                 "suitable masks!")
         masks_even = self._get_masks(n_input, n_hiddens, switched_dependencies=False)
         masks_odd = self._get_masks(n_input, n_hiddens, switched_dependencies=True)
 
@@ -191,6 +192,9 @@ class IAF(FlowBaseClass):
             first_hidden_masked_act = tf.nn.elu(first_hidden_masked)
 
             if context is not None:
+                assert context.get_shape()[1] == first_hidden_masked_act.get_shape()[1], \
+                    "When the context is fed into the MADE as in the Sylvester Normalizing flow paper, the context " \
+                    "size and the width of the first MADE layer have to be the same."
                 hidden = context + first_hidden_masked_act
             else:
                 hidden = first_hidden_masked_act

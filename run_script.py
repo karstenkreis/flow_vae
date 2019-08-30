@@ -23,7 +23,7 @@ def build_parameter_dict():
         "restart_filename": None,
         "num_epochs": 2500,
         "model_params": {
-            "warmup_epochs": 200.0,
+            "warmup_epochs": 200,
             "approx_post_offset": -3.0,
             "num_latent_units": 64,
             "num_is_samples_nll": 1000,

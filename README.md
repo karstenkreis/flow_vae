@@ -32,7 +32,8 @@ self-explanatory. One important difference compared to the reference paper is th
 instead of weight normalization and does not use data-dependent initialization. For MNIST, this worked just fine, but I 
 could image that when modeling more complex data, such as CIFAR10, it will make a difference and weightnorm with 
 data-dependent init will work better. I also found that, unsurprisingly, without any normalization in the cMADE layers 
-training can be unstable easily.
+training can be unstable easily. Note that the width of the cMADE layers has to be an integer multiple of the number of 
+latent units used by the model.
 
 I also implemented different techniques to estimate the log-likelihood of the final model. It can be estimated 
 with standard importance sampling in latent space, using the approximate posterior distribution as the proposal 
