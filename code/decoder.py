@@ -122,7 +122,7 @@ class SNFDecoder(DecoderBaseClass):
                 gate_conv = tf.contrib.layers.conv2d_transpose(input, num_outputs=output_channels,
                                                                kernel_size=kernel_size, stride=stride,
                                                                padding=padding, activation_fn=tf.nn.sigmoid)
-                return tf.sigmoid(gate_conv) * output_conv
+                return gate_conv * output_conv
 
             number_latents = latent_state.get_shape()[1].value
             hidden = tf.reshape(latent_state, shape=[-1, 1, 1, latent_state.get_shape()[1].value])

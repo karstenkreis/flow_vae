@@ -139,7 +139,7 @@ class SNFEncoder(EncoderBaseClass):
                                                        stride=stride, padding=padding, activation_fn=tf.nn.elu)
                 gate_conv = tf.contrib.layers.conv2d(input, num_outputs=output_channels, kernel_size=kernel_size,
                                                      stride=stride, padding=padding, activation_fn=tf.nn.sigmoid)
-                return tf.sigmoid(gate_conv) * output_conv
+                return gate_conv * output_conv
 
             hidden = tf.reshape(input_images, shape=[-1, 28, 28, 1])
             hidden = gated_conv_2d(hidden, 1, 32, 5, 1, "SAME")
